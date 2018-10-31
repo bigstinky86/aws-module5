@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awsmentoring-deployment
+  namespace: dev
+  labels:
+    app: awsmentapp
+spec:
+  selector:
+    matchLabels: 
+      app: awsmentapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: awsmentapp
+    spec:
+      volumes:
+        - name: app-volume
+          hostPath:
+            path: /home/ec2-user/app/index.php
+      containers:
+        - name: web
+          image: bigstinky/backend
+          ports:
+            - name: http
+              containerPort: 80
+              hostPort: 80
+          envFrom:
+            - secretRef:
+                name: awssecret
+            - configMapRef:
+                name: awsconfigmap
+          volumeMounts:
+            - name: app-volume
+              readOnly: false
+              mountPath: /var/www/app/public_html/index.php
+        - name: database
+          image: bigstinky/dbserver:0.2
+          ports:
+            - name: dbhost
+              containerPort: 3306
+              hostPort: 3306
+          envFrom:
+            - secretRef:
+                name: awssecret
+            - configMapRef:
+                name: awsconfigmap
